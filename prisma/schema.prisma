@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  tgId          BigInt   @unique
+  username      String?
+  firstName     String?
+  lastName      String?
+  languageCode  String?
+  createdAt     DateTime @default(now())
+  referredById  String?
+  balanceCents  Int      @default(0)
+  gifts         UserGift[]
+  referrals     Referral[] @relation("UserReferrals")
+}
+
+model GiftType {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  title         String
+  iconUrl       String?
+  baseIncomeCpm Int
+  maxStreak     Int      @default(14)
+  createdAt     DateTime @default(now())
+}
+
+model UserGift {
+  id            String   @id @default(cuid())
+  userId        String
+  giftTypeId    String
+  quantity      Int      @default(0)
+  lastClaimAt   DateTime?
+
+  user          User     @relation(fields: [userId], references: [id])
+  giftType      GiftType @relation(fields: [giftTypeId], references: [id])
+
+  @@unique([userId, giftTypeId])
+}
+
+model Referral {
+  id         String   @id @default(cuid())
+  inviterId  String
+  inviteeId  String   @unique
+  createdAt  DateTime @default(now())
+
+  inviter    User     @relation("UserReferrals", fields: [inviterId], references: [id])
+}
+
+model Txn {
+  id          String   @id @default(cuid())
+  userId      String
+  amountCents Int
+  type        String
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
